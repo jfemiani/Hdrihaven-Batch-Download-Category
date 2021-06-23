@@ -22,14 +22,14 @@ def getImagesForCategory(url):
     url = BASE_URL + url
     content = requests.get(url).text
     soup = BeautifulSoup(content, 'html.parser')
-    thumbnail_divs = soup.find("div", {"id": "hdri-grid"}).findAll("a")
+    thumbnail_divs = soup.find("div", {"id": "item-grid"}).findAll("a")
     for i in thumbnail_divs:
         image_name = i['href'].split("h=")[1]
         yield image_name
 
 
-def downloadImage(name):
-    url = BASE_URL + "/files/hdris/%s_%s.hdr" % (name, "1k")
+def downloadImage(name, quality):
+    url = BASE_URL + "/files/hdris/%s_%s.hdr" % (name, quality)
     response = requests.get(url, stream=True)
     with open(name + ".hdr", "wb") as handle:
         for data in response.iter_content():
@@ -39,10 +39,11 @@ def downloadImage(name):
 parser = argparse.ArgumentParser(description="A script to download all HDRIs of a certain category")
 parser.add_argument("-mode", choices=['list', 'download'], default="list")
 parser.add_argument("-category_url", default="/hdris/category/?c=all&o=popular")
+parser.add_argument("-quality", choices=["1k", "2k", "4k", "8k", "16k"], default="8k")
 cmd = parser.parse_args()
 
-if cmd.mode == "categories":
+if cmd.mode == "list":
     print("\n".join("%s: %s" % (name, url) for url, name in getCategories()))
 else:
     for name in tqdm(getImagesForCategory(cmd.category_url)):
-        downloadImage(name)
+        downloadImage(name, cmd.quality)
